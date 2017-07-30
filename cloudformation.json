@@ -24,6 +24,16 @@
           "Description": "Optional. For registering your S3 website endpoint to a Route 53 Alias record set.",
           "Type": "String",
           "Default": ""
+      },
+      "CostThreshold" : {
+          "Description": "Cost in dollars before receiving alarm.",
+          "Type": "Number",
+          "Default": "10",
+      },
+      "BillingAlarmNotification": {
+          "Description": "ARN of alarm action",
+          "Type": "String",
+          "Default": "-"
       }
 
     },
@@ -190,6 +200,32 @@
                       "DNSName" : { "Fn::GetAtt" : [ "myDistribution", "DomainName" ]}
                   }}]
           }
+      },
+      "SpendingAlarm": {
+        "Type": "AWS::CloudWatch::Alarm",
+        "Properties": {
+          "AlarmDescription": { "Fn::Join": ["", [
+            "Alarm if AWS spending is over $",
+            { "Ref": "AlarmThreshold" }
+          ]]},
+          "Namespace": "AWS/Billing",
+          "MetricName": "EstimatedCharges",
+          "Dimensions": [{
+            "Name": "Currency",
+            "Value" : "USD"
+          }],
+          "Statistic": "Maximum",
+          "Period": "21600",
+          "EvaluationPeriods": "1",
+          "Threshold": { "Ref": "CostThreshold" },
+          "ComparisonOperator": "GreaterThanThreshold",
+          "AlarmActions": [{
+            "Ref": "BillingAlarmNotification"
+          }],
+          "InsufficientDataActions": [{
+            "Ref": "BillingAlarmNotification"
+          }]
+        }
       }
     },
 
